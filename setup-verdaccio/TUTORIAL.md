@@ -296,7 +296,63 @@ uplinks:
 
 ---
 
-## 六、文件清单
+## 六、离线打包（内网迁移）
+
+使用 `pack-verdaccio.sh` 将缓存的 npm 包打包成可迁移的离线包。
+
+### 基本用法
+
+```bash
+# 打包全部缓存
+bash pack-verdaccio.sh
+
+# 只打包最近 7 天新增的包
+bash pack-verdaccio.sh --recent 7
+
+# 只打包 .tgz，不包含元数据
+bash pack-verdaccio.sh --no-metadata
+
+# 指定输出目录
+bash pack-verdaccio.sh --output /path/to/output
+
+# 预览要打包的文件（不实际执行）
+bash pack-verdaccio.sh --dry-run
+```
+
+### 输出结构
+
+```
+verdaccio-offline-20260514-194759.tar.gz    ← 压缩包
+verdaccio-offline-20260514-194759/          ← 解压后目录
+  ├── storage/          ← 所有 .tgz + package.json + .verdaccio-db.json
+  ├── config.yaml       ← 内网离线可用的 Verdaccio 配置
+  ├── setup-intranet.sh ← 目标机器一键还原脚本
+  └── README.md         ← 使用说明
+```
+
+### 内网还原
+
+```bash
+# 1. 传输到内网机器
+scp verdaccio-offline-*.tar.gz user@intranet-host:/tmp/
+
+# 2. 在内网机器上解压
+tar xzf verdaccio-offline-*.tar.gz
+cd verdaccio-offline-*/
+
+# 3. 一键还原
+bash setup-intranet.sh
+```
+
+`setup-intranet.sh` 会自动：
+- 安装 Verdaccio（如未安装）
+- 复制缓存包到 `~/.local/share/verdaccio/storage/`
+- 安装 systemd 服务并启动
+- 配置 `npm registry` 指向本地
+
+---
+
+## 七、文件清单
 
 | 路径 | 用途 |
 |------|------|
@@ -305,3 +361,4 @@ uplinks:
 | `~/.local/share/verdaccio/storage/` | 包缓存目录 |
 | `~/.config/systemd/user/verdaccio.service` | systemd 服务 |
 | `setup-verdaccio.sh` | 一键安装脚本 |
+| `pack-verdaccio.sh` | 离线打包脚本 |
